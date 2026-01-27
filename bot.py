@@ -6,6 +6,7 @@ from discord.ext import commands
 from flask import Flask
 from threading import Thread
 from openai import OpenAI
+import asyncio
 
 from immortals import IMMORTALS
 
@@ -61,7 +62,7 @@ Good: {data['good']}
 # DISCORD BOT
 # =====================================================
 intents = discord.Intents.default()
-intents.message_content = True  # <-- WAŻNE: pozwala czytać treść wiadomości
+intents.message_content = True  # WAŻNE: pozwala czytać treść wiadomości
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
@@ -87,10 +88,12 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
         )
         return
 
+    # Defer – informujemy Discord, że odpowiedź będzie później
     await interaction.response.defer()
 
     try:
-        ai_data = get_ai_artifact_build(name, IMMORTALS[name])
+        # Wykonanie funkcji blokującej w osobnym wątku
+        ai_data = await asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name])
     except Exception:
         await interaction.followup.send("❌ AI error. Try again later.")
         return
