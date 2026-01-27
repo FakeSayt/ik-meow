@@ -2,26 +2,43 @@ import discord
 from discord.ext import commands
 import os
 
+from flask import Flask
+from threading import Thread
+
 from immortals import IMMORTALS
 from artifacts import ARTIFACTS
-# ====== TOKEN Z ENV ======
+
+# ================== WEB SERVER (RENDER NEEDS PORT) ==================
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Discord bot is running!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+Thread(target=run_web).start()
+
+# ================== TOKEN ==================
 TOKEN = os.getenv("TOKEN")
 if not TOKEN:
     raise RuntimeError("❌ TOKEN not found! Set it in Render Environment Variables.")
 
-# ====== INTENTS ======
+# ================== INTENTS ==================
 intents = discord.Intents.default()
 intents.message_content = True
 
-# ====== BOT SETUP ======
+# ================== BOT SETUP ==================
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ====== READY EVENT ======
+# ================== READY EVENT ==================
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
 
-# ====== MESSAGE HANDLER ======
+# ================== MESSAGE HANDLER ==================
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -48,5 +65,5 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ====== RUN BOT ======
+# ================== RUN BOT ==================
 bot.run(TOKEN)
