@@ -1,14 +1,17 @@
-import discord
-from discord.ext import commands
 import os
-
+import json
+import discord
+from discord import app_commands
+from discord.ext import commands
 from flask import Flask
 from threading import Thread
+from openai import OpenAI
 
 from immortals import IMMORTALS
-from artifacts import ARTIFACTS
 
-# ================== WEB SERVER (RENDER NEEDS PORT) ==================
+# =====================================================
+# WEB SERVER (RENDER)
+# =====================================================
 app = Flask(__name__)
 
 @app.route("/")
@@ -21,49 +24,89 @@ def run_web():
 
 Thread(target=run_web).start()
 
-# ================== TOKEN ==================
-TOKEN = os.getenv("TOKEN")
-if not TOKEN:
-    raise RuntimeError("❌ TOKEN not found! Set it in Render Environment Variables.")
+# =====================================================
+# OPENAI
+# =====================================================
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ================== INTENTS ==================
+def get_ai_artifact_build(name, data):
+    prompt = f"""
+You are a game build expert.
+
+Return ONLY valid JSON:
+{{
+  "best_artifact": "",
+  "best_main_stat": "",
+  "best_passive": "",
+  "alternative_passive": ""
+}}
+
+Game data:
+Best: {data['best']}
+Good: {data['good']}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {"role": "system", "content": "You are precise and factual."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.4
+    )
+
+    return json.loads(response.choices[0].message.content)
+
+# =====================================================
+# DISCORD BOT
+# =====================================================
 intents = discord.Intents.default()
-intents.message_content = True
-
-# ================== BOT SETUP ==================
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ================== READY EVENT ==================
 @bot.event
 async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
+    await bot.tree.sync()
+    print(f"✅ Logged in as {bot.user} | Slash commands synced")
 
-# ================== MESSAGE HANDLER ==================
-@bot.event
-async def on_message(message):
-    if message.author.bot:
+# =====================================================
+# SLASH COMMAND
+# =====================================================
+@bot.tree.command(
+    name="bestartifact",
+    description="Get best artifact build for an immortal"
+)
+@app_commands.describe(immortal="Name of the immortal (e.g. alex)")
+async def bestartifact(interaction: discord.Interaction, immortal: str):
+    name = immortal.lower()
+
+    if name not in IMMORTALS:
+        await interaction.response.send_message(
+            f"❌ Immortal **{immortal}** not found.",
+            ephemeral=True
+        )
         return
 
-    content = message.content.lower().strip()
+    await interaction.response.defer()
 
-    if content.startswith("best artifact for"):
-        name = content.replace("best artifact for", "").strip()
+    try:
+        ai_data = get_ai_artifact_build(name, IMMORTALS[name])
+    except Exception:
+        await interaction.followup.send("❌ AI error. Try again later.")
+        return
 
-        if name in IMMORTALS:
-            data = IMMORTALS[name]
-            response = (
-                f"🛡️ **Best artifact for {name.title()}**\n\n"
-                f"🏆 **Best:**\n{data['best']}\n\n"
-                f"🟡 **Good to have for now:**\n{data['good']}"
-            )
-            await message.channel.send(response)
-        else:
-            available = ", ".join(i.title() for i in IMMORTALS.keys())
-            await message.channel.send(
-                f"❌ Immortal **{name}** not found.\nAvailable: {available}"
-            )
+    embed = discord.Embed(
+        title=f"✨ TL;DR – Best Artifact for {name.title()}",
+        color=discord.Color.gold()
+    )
 
-    await bot.process_commands(message)
+    embed.add_field(name="⭐ Best Artifact", value=ai_data["best_artifact"], inline=False)
+    embed.add_field(name="⚔️ Best Main Stat", value=ai_data["best_main_stat"], inline=False)
+    embed.add_field(name="⚡ Best Passive Roll", value=ai_data["best_passive"], inline=False)
+    embed.add_field(name="🔁 Alternative Passive", value=ai_data["alternative_passive"], inline=False)
 
-# ================== RUN BOT ==================
-bot.run(TOKEN)
+    await interaction.followup.send(embed=embed)
+
+# =====================================================
+# RUN
+# =====================================================
+bot.run(os.getenv("TOKEN"))
