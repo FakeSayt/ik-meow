@@ -61,6 +61,7 @@ Good: {data['good']}
 # DISCORD BOT
 # =====================================================
 intents = discord.Intents.default()
+intents.message_content = True  # <-- WAŻNE: pozwala czytać treść wiadomości
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
@@ -109,4 +110,4 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
 # =====================================================
 # RUN
 # =====================================================
-bot.run(os.getenv("TOKEN"))
+bot.run(os.getenv("DISCORD_TOKEN"))
