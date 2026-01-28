@@ -8,8 +8,6 @@ from openai import OpenAI
 import asyncio
 import traceback
 
-from immortals import IMMORTALS
-
 # =====================================================
 # WEB SERVER (RENDER)
 # =====================================================
@@ -34,34 +32,31 @@ if not openai_api_key:
 
 client = OpenAI(api_key=openai_api_key)
 
-def get_ai_artifact_build(name, data):
+def get_ai_artifact_build(name: str):
+    """
+    Funkcja wysyła prompt do OpenAI i zwraca tekst w TL;DR stylu.
+    """
     prompt = f"""
-You are an expert in the game Infinity Kingdom. 
-The following data lists artifacts for a specific immortal hero in the game. 
+You are an expert in the game Infinity Kingdom.
 
-"Best" are the top recommended artifacts.
-"Good" are other viable artifacts.
-
-Using this data, provide the best artifact build for this immortal, including:
+Given the immortal hero name "{name}", provide the **best artifact build** including:
 - Best Artifact
 - Best Main Stat
 - Best Passive
 - Alternative Passive
 
-Game data:
-Best: {data['best']}
-Good: {data['good']}
-
-Return your answer in TL;DR style. Only use values from the Best and Good lists if possible.
+Return your answer in TL;DR style. Use your knowledge of Infinity Kingdom. Do not invent names that do not exist in the game.
 """
     try:
         print(f"[DEBUG] Sending prompt to OpenAI for {name}:")
         print(prompt)
+
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4
         )
+
         content = response.choices[0].message.content
         print("[DEBUG] AI Response:")
         print(content)
@@ -93,20 +88,13 @@ async def on_ready():
 # =====================================================
 @bot.tree.command(
     name="bestartifact",
-    description="Get the best artifact build for an immortal"
+    description="Get the best artifact build for any immortal"
 )
-@app_commands.describe(immortal="Name of the immortal (e.g. alex)")
+@app_commands.describe(immortal="Name of the immortal (e.g., Himiko, Wu, Alex)")
 async def bestartifact(interaction: discord.Interaction, immortal: str):
-    name = immortal.lower()
+    name = immortal.strip()
 
-    if name not in IMMORTALS:
-        await interaction.response.send_message(
-            f"Immortal **{immortal}** not found.",
-            ephemeral=True
-        )
-        return
-
-    # Defer – pozwala AI pracować bez timeoutu Discorda
+    # Defer interaction – pozwala na dłuższą pracę AI
     try:
         await interaction.response.defer()
     except discord.errors.NotFound:
@@ -117,11 +105,11 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
         traceback.print_exc()
         return
 
-    # Wykonanie AI w osobnym wątku z timeoutem 2 minuty (120s)
+    # Wywołanie AI w osobnym wątku z timeoutem 2 minuty
     try:
         ai_text = await asyncio.wait_for(
-            asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name]),
-            timeout=120.0  # <-- tutaj ustawiony nowy timeout
+            asyncio.to_thread(get_ai_artifact_build, name),
+            timeout=120.0
         )
     except asyncio.TimeoutError:
         await interaction.followup.send("⏱ AI took too long to respond (over 2 minutes). Please try again later.")
