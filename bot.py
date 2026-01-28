@@ -65,7 +65,7 @@ Important:
             temperature=0.4
         )
     except Exception as e:
-        print(⚠️ OpenAI API error:", e)
+        print("OpenAI API error:", e)
         return {
             "best_artifact": "Unknown",
             "best_main_stat": "Unknown",
