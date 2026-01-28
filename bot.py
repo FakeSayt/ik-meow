@@ -46,17 +46,29 @@ Game data:
 Best: {data['best']}
 Good: {data['good']}
 """
-
     response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": "You are precise and factual."},
-        {"role": "user", "content": prompt}
-    ],
-    temperature=0.4
-)
+        model="gpt-3.5-turbo",  # model turbo
+        messages=[
+            {"role": "system", "content": "You are precise and factual."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.4
+    )
+    
+    content = response.choices[0].message.content
+    print("DEBUG AI RESPONSE:", content)  # <--- debug: zobacz w logach co zwraca AI
 
-    return json.loads(response.choices[0].message.content)
+    # Spróbuj sparsować JSON; jeśli się nie uda, zwróć pusty build
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        print("⚠️ AI zwróciło niepoprawny JSON, zwracam pusty obiekt.")
+        return {
+            "best_artifact": "Unknown",
+            "best_main_stat": "Unknown",
+            "best_passive": "Unknown",
+            "alternative_passive": "Unknown"
+        }
 
 # =====================================================
 # DISCORD BOT
@@ -94,7 +106,8 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
     try:
         # Wykonanie funkcji blokującej w osobnym wątku
         ai_data = await asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name])
-    except Exception:
+    except Exception as e:
+        print("⚠️ Błąd AI:", e)
         await interaction.followup.send("❌ AI error. Try again later.")
         return
 
