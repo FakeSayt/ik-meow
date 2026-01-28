@@ -279,11 +279,11 @@ If unknown, leave it as 'Unknown'.
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
-            max_tokens=200
-        )
+    model="gpt-4-turbo",
+    messages=[{"role": "user", "content": prompt}],
+    temperature=0.0,
+    max_tokens=200
+)
         content = response.choices[0].message.content.strip()
         return content if content else build_text
     except Exception as e:
