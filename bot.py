@@ -94,11 +94,14 @@ async def on_ready():
 async def bestartifact(interaction: discord.Interaction, immortal: str):
     name = immortal.strip()
 
-    # Defer interaction – pozwala na dłuższą pracę AI
+    # Defer interaction – pozwala AI pracować bez timeoutu Discorda
     try:
         await interaction.response.defer()
     except discord.errors.NotFound:
         print(f"[WARNING] Interaction for {name} already expired.")
+        return
+    except discord.errors.HTTPException as e:
+        print(f"[WARNING] Interaction already acknowledged: {repr(e)}")
         return
     except Exception as e:
         print("[ERROR] defer() failed:", repr(e))
@@ -121,7 +124,7 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
         return
 
     if not ai_text:
-        await interaction.followup.send("AI could not generate the artifact build. Please try again later.")
+        await interaction.followup.send(f⚠️ AI could not generate artifact build for **{name}**. Please try again later.")
         return
 
     embed = discord.Embed(
