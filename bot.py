@@ -106,12 +106,34 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
         )
         return
 
-    await interaction.response.defer()
+    # Defer – pozwala AI pracować bez timeoutu Discorda
+    try:
+        await interaction.response.defer()
+    except discord.errors.NotFound:
+        print(f"[WARNING] Interaction for {name} already expired.")
+        return
+    except Exception as e:
+        print("[ERROR] defer() failed:", repr(e))
+        traceback.print_exc()
+        return
 
-    ai_text = await asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name])
+    # Wykonanie AI w osobnym wątku z timeoutem 2 minuty (120s)
+    try:
+        ai_text = await asyncio.wait_for(
+            asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name]),
+            timeout=120.0  # <-- tutaj ustawiony nowy timeout
+        )
+    except asyncio.TimeoutError:
+        await interaction.followup.send("⏱ AI took too long to respond (over 2 minutes). Please try again later.")
+        return
+    except Exception as e:
+        print("[ERROR] AI execution failed:", repr(e))
+        traceback.print_exc()
+        await interaction.followup.send("❌ AI error occurred. Check logs.")
+        return
 
     if not ai_text:
-        await interaction.followup.send("AI could not generate the artifact build. Please check logs for details.")
+        await interaction.followup.send("AI could not generate the artifact build. Please try again later.")
         return
 
     embed = discord.Embed(
