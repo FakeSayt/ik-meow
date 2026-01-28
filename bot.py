@@ -7,6 +7,7 @@ from flask import Flask
 from threading import Thread
 from openai import OpenAI
 import asyncio
+import re
 
 from immortals import IMMORTALS
 
@@ -46,23 +47,36 @@ Game data:
 Best: {data['best']}
 Good: {data['good']}
 """
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",  # model turbo
-        messages=[
-            {"role": "system", "content": "You are precise and factual."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.4
-    )
-    
-    content = response.choices[0].message.content
-    print("DEBUG AI RESPONSE:", content)  # <--- debug: zobacz w logach co zwraca AI
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are precise and factual."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.4
+        )
+    except Exception as e:
+        print("⚠️ OpenAI API error:", e)
+        return {
+            "best_artifact": "Unknown",
+            "best_main_stat": "Unknown",
+            "best_passive": "Unknown",
+            "alternative_passive": "Unknown"
+        }
 
-    # Spróbuj sparsować JSON; jeśli się nie uda, zwróć pusty build
+    content = response.choices[0].message.content
+    print("DEBUG AI RESPONSE:", content)
+
+    # Extract JSON from text in case AI adds extra text
+    match = re.search(r"\{.*\}", content, re.DOTALL)
+    if match:
+        content = match.group(0)
+
     try:
         return json.loads(content)
     except json.JSONDecodeError:
-        print("⚠️ AI zwróciło niepoprawny JSON, zwracam pusty obiekt.")
+        print("⚠️ AI returned invalid JSON, returning default object.")
         return {
             "best_artifact": "Unknown",
             "best_main_stat": "Unknown",
@@ -74,7 +88,7 @@ Good: {data['good']}
 # DISCORD BOT
 # =====================================================
 intents = discord.Intents.default()
-intents.message_content = True  # WAŻNE: pozwala czytać treść wiadomości
+intents.message_content = True  # IMPORTANT: allows reading message content
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
@@ -87,7 +101,7 @@ async def on_ready():
 # =====================================================
 @bot.tree.command(
     name="bestartifact",
-    description="Get best artifact build for an immortal"
+    description="Get the best artifact build for an immortal"
 )
 @app_commands.describe(immortal="Name of the immortal (e.g. alex)")
 async def bestartifact(interaction: discord.Interaction, immortal: str):
@@ -100,15 +114,15 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
         )
         return
 
-    # Defer – informujemy Discord, że odpowiedź będzie później
+    # Defer – inform Discord the response will take some time
     await interaction.response.defer()
 
     try:
-        # Wykonanie funkcji blokującej w osobnym wątku
+        # Run blocking function in a separate thread
         ai_data = await asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name])
     except Exception as e:
-        print("⚠️ Błąd AI:", e)
-        await interaction.followup.send("❌ AI error. Try again later.")
+        print("⚠️ AI error in slash command:", e)
+        await interaction.followup.send("❌ AI error. Please try again later.")
         return
 
     embed = discord.Embed(
