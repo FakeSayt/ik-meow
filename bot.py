@@ -33,20 +33,25 @@ if not openai_api_key:
 
 client = OpenAI(api_key=openai_api_key)
 
-def get_ai_artifact_build_freeform(name, data):
+def get_ai_artifact_build(name, data):
     prompt = f"""
 You are an expert in the game Infinity Kingdom. 
-Given the following game data for an immortal, suggest the best artifact, main stat, passive, and alternative passive.
+The following data lists artifacts for a specific immortal hero in the game. 
+
+"Best" are the top recommended artifacts.
+"Good" are other viable artifacts.
+
+Using this data, provide the best artifact build for this immortal, including:
+- Best Artifact
+- Best Main Stat
+- Best Passive
+- Alternative Passive
 
 Game data:
 Best: {data['best']}
 Good: {data['good']}
 
-Return your answer in a short TL;DR style, for example:
-Best Artifact: ...
-Best Main Stat: ...
-Best Passive: ...
-Alternative Passive: ...
+Return your answer in TL;DR style. Only use values from the Best and Good lists if possible.
 """
     try:
         response = client.chat.completions.create(
@@ -56,7 +61,7 @@ Alternative Passive: ...
         )
         content = response.choices[0].message.content
         print("DEBUG AI RESPONSE:", content)
-        return content.strip()  # usuń zbędne spacje
+        return content.strip()
     except Exception as e:
         print("[WARNING] AI error:", repr(e))
         return None
@@ -97,14 +102,14 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
 
     await interaction.response.defer()
 
-    ai_text = await asyncio.to_thread(get_ai_artifact_build_freeform, name, IMMORTALS[name])
+    ai_text = await asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name])
 
     if not ai_text:
         await interaction.followup.send("AI could not generate the artifact build. Please try again later.")
         return
 
     embed = discord.Embed(
-        title=f"TL;DR – Best Artifact for {name.title()}",
+        title=f"✨ TL;DR – Best Artifact for {name.title()}",
         description=ai_text,
         color=discord.Color.gold()
     )
