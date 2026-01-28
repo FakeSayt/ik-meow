@@ -29,7 +29,9 @@ Thread(target=run_web).start()
 # =====================================================
 # OPENAI
 # =====================================================
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Using your environment variable OPENAI_API_KEY
+openai_api_key = os.environ["OPENAI_API_KEY"]
+client = OpenAI(api_key=openai_api_key)
 
 def get_ai_artifact_build(name, data):
     prompt = f"""
@@ -87,6 +89,9 @@ Good: {data['good']}
 # =====================================================
 # DISCORD BOT
 # =====================================================
+# Using your environment variable DISCORD_TOKEN
+discord_token = os.environ["DISCORD_TOKEN"]
+
 intents = discord.Intents.default()
 intents.message_content = True  # IMPORTANT: allows reading message content
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -140,4 +145,4 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
 # =====================================================
 # RUN
 # =====================================================
-bot.run(os.getenv("DISCORD_TOKEN"))
+bot.run(discord_token)
