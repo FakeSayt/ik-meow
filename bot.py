@@ -29,25 +29,31 @@ Thread(target=run_web).start()
 # =====================================================
 # OPENAI
 # =====================================================
-# Using your environment variable OPENAI_API_KEY
 openai_api_key = os.environ["OPENAI_API_KEY"]
 client = OpenAI(api_key=openai_api_key)
 
 def get_ai_artifact_build(name, data):
     prompt = f"""
-You are a game build expert.
+You are an expert in the game Infinity Kingdom. 
 
-Return ONLY valid JSON:
+Given the following game data for an immortal, provide ONLY valid JSON in EXACTLY the following format:
+
 {{
-  "best_artifact": "",
-  "best_main_stat": "",
-  "best_passive": "",
-  "alternative_passive": ""
+  "best_artifact": "name of the best artifact",
+  "best_main_stat": "the main stat to prioritize",
+  "best_passive": "the best passive ability",
+  "alternative_passive": "an alternative passive option"
 }}
 
 Game data:
 Best: {data['best']}
 Good: {data['good']}
+
+Important:
+- Fill in all fields.
+- Do NOT add any explanation or extra text.
+- Use only values from the game data if possible.
+- If unsure, give your best estimate.
 """
     try:
         response = client.chat.completions.create(
@@ -59,7 +65,7 @@ Good: {data['good']}
             temperature=0.4
         )
     except Exception as e:
-        print("⚠️ OpenAI API error:", e)
+        print(⚠️ OpenAI API error:", e)
         return {
             "best_artifact": "Unknown",
             "best_main_stat": "Unknown",
@@ -76,24 +82,30 @@ Good: {data['good']}
         content = match.group(0)
 
     try:
-        return json.loads(content)
+        ai_data = json.loads(content)
     except json.JSONDecodeError:
         print("⚠️ AI returned invalid JSON, returning default object.")
-        return {
+        ai_data = {
             "best_artifact": "Unknown",
             "best_main_stat": "Unknown",
             "best_passive": "Unknown",
             "alternative_passive": "Unknown"
         }
 
+    # Fallback for any empty fields
+    for key in ["best_artifact", "best_main_stat", "best_passive", "alternative_passive"]:
+        if not ai_data.get(key):
+            ai_data[key] = "Unknown"
+
+    return ai_data
+
 # =====================================================
 # DISCORD BOT
 # =====================================================
-# Using your environment variable DISCORD_TOKEN
 discord_token = os.environ["DISCORD_TOKEN"]
 
 intents = discord.Intents.default()
-intents.message_content = True  # IMPORTANT: allows reading message content
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
@@ -119,11 +131,9 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
         )
         return
 
-    # Defer – inform Discord the response will take some time
     await interaction.response.defer()
 
     try:
-        # Run blocking function in a separate thread
         ai_data = await asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name])
     except Exception as e:
         print("⚠️ AI error in slash command:", e)
