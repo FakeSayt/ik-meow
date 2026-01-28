@@ -34,19 +34,30 @@ client = OpenAI(api_key=openai_api_key)
 
 def get_ai_artifact_build(name: str):
     """
-    Funkcja wysyła prompt do OpenAI i zwraca tekst w TL;DR stylu.
+    Funkcja wysyła prompt do OpenAI i zwraca tekst w TL;DR stylu, mocno ograniczony do Infinity Kingdom.
     """
     prompt = f"""
-You are an expert in the game Infinity Kingdom.
+You are an expert in the game Infinity Kingdom. Only provide information from Infinity Kingdom. 
+Do not mention any other games. 
 
-Given the immortal hero name "{name}", provide the **best artifact build** including:
+The player provided the immortal hero name "{name}". 
+
+Provide the **best artifact build** including:
 - Best Artifact
 - Best Main Stat
 - Best Passive
 - Alternative Passive
 
-Return your answer in TL;DR style. Use your knowledge of Infinity Kingdom. Do not invent names that do not exist in the game.
+Use the TL;DR format exactly like this example:
+
+✨ TL;DR – Best Artifact for Alex
+⭐ Best Artifact: [artifact name]⚔️ Best Main Stat: [main stat]
+⚡ Best Passive Roll: [passive]
+🔁 Alternative Passive: [alternative passive]
+
+Respond only with the build. Do not add extra commentary.
 """
+
     try:
         print(f"[DEBUG] Sending prompt to OpenAI for {name}:")
         print(prompt)
@@ -54,7 +65,7 @@ Return your answer in TL;DR style. Use your knowledge of Infinity Kingdom. Do no
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.4
+            temperature=0.2  # niska temperatura, żeby ograniczyć wymyślanie
         )
 
         content = response.choices[0].message.content
@@ -124,7 +135,7 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
         return
 
     if not ai_text:
-        await interaction.followup.send(f⚠️ AI could not generate artifact build for **{name}**. Please try again later.")
+        await interaction.followup.send(f"⚠️ AI could not generate artifact build for **{name}**. Please try again later.")
         return
 
     embed = discord.Embed(
