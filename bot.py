@@ -6,6 +6,7 @@ from flask import Flask
 from threading import Thread
 from openai import OpenAI
 import asyncio
+import traceback
 
 from immortals import IMMORTALS
 
@@ -54,16 +55,21 @@ Good: {data['good']}
 Return your answer in TL;DR style. Only use values from the Best and Good lists if possible.
 """
     try:
+        print(f"[DEBUG] Sending prompt to OpenAI for {name}:")
+        print(prompt)
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4
         )
         content = response.choices[0].message.content
-        print("DEBUG AI RESPONSE:", content)
+        print("[DEBUG] AI Response:")
+        print(content)
         return content.strip()
     except Exception as e:
-        print("[WARNING] AI error:", repr(e))
+        print("[ERROR] AI error while generating artifact build!")
+        print("Exception:", repr(e))
+        traceback.print_exc()
         return None
 
 # =====================================================
@@ -105,7 +111,7 @@ async def bestartifact(interaction: discord.Interaction, immortal: str):
     ai_text = await asyncio.to_thread(get_ai_artifact_build, name, IMMORTALS[name])
 
     if not ai_text:
-        await interaction.followup.send("AI could not generate the artifact build. Please try again later.")
+        await interaction.followup.send("AI could not generate the artifact build. Please check logs for details.")
         return
 
     embed = discord.Embed(
