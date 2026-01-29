@@ -272,7 +272,7 @@ Here is the current TL;DR build:
 
 {build_text}
 
-Please fill in the Unknown fields (⚡ Best Passive Roll / 🔁 Alternative Passive / ⚔️ Best Main Stat) with accurate Infinity Kingdom info.
+Please fill in the Unknown fields (⭐ Best Artifact for example for Genghis Khan is it Iron Fist Or Annihilation /⚡ Best Passive Roll (cavalry attack % etc doesn't exist in artifacts stats please make sure it's correct / 🔁 Alternative Passive (cavalry attack % etc doesn't exist in artifacts stats please make sure it's correct / ⚔️ Best Main Stat (for mages like Merlin, Himiko it's Crit % and 2nd/alternative passive is % magic damage so please check thsi also.) with accurate Infinity Kingdom mobile game..
 Do NOT invent artifacts. Only provide valid stats or passives. Respond ONLY with the updated TL;DR build in the exact same format.
 If unknown, leave it as 'Unknown'.
 """
