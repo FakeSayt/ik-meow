@@ -1,6 +1,5 @@
-import discord
-from discord import app_commands
 from discord.ext import commands
+from discord import app_commands
 from mage_stats import MAGE_STATS
 from helpers import get_hero_info
 from ai_helper import fetch_hero_ai_data
@@ -9,37 +8,35 @@ class Damage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="damage", description="Compare ultimate damage between two Immortals")
-    async def damage(self, interaction: discord.Interaction, hero1_name: str, hero2_name: str):
-        # Pobierz dane lokalnie
-        hero1_data = get_hero_info(hero1_name)
-        hero2_data = get_hero_info(hero2_name)
+    @app_commands.command(name="damage", description="Compare ultimate damage between two heroes")
+    @app_commands.describe(hero1="First hero", hero2="Second hero")
+    async def damage(self, interaction: discord.Interaction, hero1: str, hero2: str):
+        h1 = hero1.lower()
+        h2 = hero2.lower()
 
-        # Jeśli nie ma w bazie – użyj AI
-        if hero1_data is None:
-            hero1_data = {"hero": {"full": hero1_name, "short": hero1_name}, "mage_stats": await fetch_hero_ai_data(hero1_name)}
-        if hero2_data is None:
-            hero2_data = {"hero": {"full": hero2_name, "short": hero2_name}, "mage_stats": await fetch_hero_ai_data(hero2_name)}
+        h1_data = MAGE_STATS.get(h1)
+        h2_data = MAGE_STATS.get(h2)
 
-        h1_stats = hero1_data.get("mage_stats")
-        h2_stats = hero2_data.get("mage_stats")
+        # Fallback AI if hero missing
+        if not h1_data:
+            h1_data = {"dps": "Unknown", "special": await fetch_hero_ai_data(hero1)}
+        if not h2_data:
+            h2_data = {"dps": "Unknown", "special": await fetch_hero_ai_data(hero2)}
 
-        # Porównanie DPS
-        h1_dps = h1_stats.get("dps", 0) if h1_stats else 0
-        h2_dps = h2_stats.get("dps", 0) if h2_stats else 0
-
-        if h1_dps > h2_dps:
-            winner = hero1_data["hero"]["full"]
-        elif h2_dps > h1_dps:
-            winner = hero2_data["hero"]["full"]
-        else:
-            winner = "Tie"
-
-        await interaction.response.send_message(
-            f"**{hero1_data['hero']['full']}** DPS: {h1_dps}\n"
-            f"**{hero2_data['hero']['full']}** DPS: {h2_dps}\n"
-            f"Better Ultimate: {winner}"
+        response = (
+            f"**Damage comparison:**\n"
+            f"{hero1.title()} DPS: {h1_data.get('dps')} | Special: {h1_data.get('special')}\n"
+            f"{hero2.title()} DPS: {h2_data.get('dps')} | Special: {h2_data.get('special')}\n"
         )
+
+        if isinstance(h1_data.get("dps"), (int, float)) and isinstance(h2_data.get("dps"), (int, float)):
+            if h1_data["dps"] > h2_data["dps"]:
+                response += f"🔥 {hero1.title()} has higher DPS!"
+            elif h1_data["dps"] < h2_data["dps"]:
+                response += f"🔥 {hero2.title()} has higher DPS!"
+            else:
+                response += "⚖️ Both heroes have equal DPS!"
+        await interaction.response.send_message(response)
 
 async def setup(bot):
     await bot.add_cog(Damage(bot))

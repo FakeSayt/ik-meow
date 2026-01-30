@@ -1,37 +1,21 @@
-import discord
 from discord.ext import commands
 from discord import app_commands
-
 from helpers import get_hero_info
 
-
 class BestArtifact(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(
-        name="bestartifact",
-        description="Get the best artifact recommendation for a hero"
-    )
+    @app_commands.command(name="bestartifact", description="Shows the best artifact for a given hero")
+    @app_commands.describe(hero="The hero name")
     async def bestartifact(self, interaction: discord.Interaction, hero: str):
-        hero_data = get_hero_info(hero)
-
-        if not hero_data:
-            await interaction.response.send_message(
-                f"❌ Hero **{hero}** not found.",
-                ephemeral=True
-            )
-            return
-
-        name = hero_data["full"]
-        price = hero_data["price"]
-
-        await interaction.response.send_message(
-            f"🏺 **Best Artifact for {name}**\n"
-            f"💰 Cost Tier: {price}\n\n"
-            f"✨ *Artifact recommendation logic goes here*"
+        info = get_hero_info(hero)
+        response = (
+            f"**{info['full_name']} ({info['short_name']})**\n"
+            f"Recommended artifact info: 🛡️ Best artifact setup for {info['full_name']}\n"
+            f"Cost/rarity: {info['price']}"
         )
+        await interaction.response.send_message(response)
 
-
-async def setup(bot: commands.Bot):
+async def setup(bot):
     await bot.add_cog(BestArtifact(bot))

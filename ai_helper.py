@@ -1,33 +1,20 @@
+import os
 import openai
 from config import OPENAI_API_KEY
 
 openai.api_key = OPENAI_API_KEY
 
-def fetch_immortal_info(name: str):
-    """
-    Funkcja używa OpenAI, żeby pobrać informacje o brakującym Immortalu
-    Zwraca słownik w formacie zgodnym z HERO_INFO, HERO_PRICE, MAGE_STATS
-    """
-    prompt = f"""
-    You are a knowledgeable Infinity Kingdom assistant.
-    Give me full hero info for '{name}':
-    - full name
-    - short name (4-5 chars)
-    - price tier
-    - mage ultimate stats (element, single_target, four_target, energy_regen, skill_per_sec, dps, special)
-    Respond in JSON format with keys: hero_info, price, mage_stats
-    """
-
+async def fetch_hero_ai_data(hero_name: str) -> str:
+    if not OPENAI_API_KEY:
+        return "AI data unavailable (no API key)"
+    
+    prompt = f"Provide a short description and meta about artifact info for the Infinity Kingdom hero '{hero_name}'."
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0
+            max_tokens=150
         )
-        content = response.choices[0].message.content
-        # Spróbuj sparsować JSON
-        import json
-        return json.loads(content)
+        return response.choices[0].message.content.strip()
     except Exception as e:
-        print(f"AI fetch failed for {name}: {e}")
-        return None
+        return f"Error fetching AI data: {e}"
