@@ -1,19 +1,15 @@
-from heroes import HERO_INFO, HERO_PRICE
-from mage_stats import MAGE_STATS
+from heroes import HERO_INFO
 
-
-def normalize(name: str) -> str:
+def normalize_name(name: str) -> str:
     return name.strip().lower()
 
+def get_hero(hero_name: str) -> dict | None:
+    """
+    Returns hero info from HERO_INFO.
+    If hero does not exist, returns None (AI can handle later).
+    """
+    key = normalize_name(hero_name)
+    return HERO_INFO.get(key)
 
-def get_hero(hero_name: str):
-    key = normalize(hero_name)
-
-    if key not in HERO_INFO:
-        return None
-
-    return {
-        "info": HERO_INFO[key],
-        "price": HERO_PRICE.get(key, "Unknown"),
-        "mage": MAGE_STATS.get(key)
-    }
+# 🔹 ALIAS – żeby stare importy NIE WYKRZACZAŁY BOTA
+get_hero_info = get_hero

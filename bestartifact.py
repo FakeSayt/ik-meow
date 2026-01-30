@@ -1,20 +1,30 @@
+import discord
+from discord import app_commands
 from helpers import get_hero_info
 
-async def get_best_artifact(ctx, hero_name: str):
-    # Pobierz info o bohaterze (z naszej bazy lub AI)
-    data = get_hero_info(hero_name)
-    
-    hero = data["hero"]
-    price = data["price"]
-    mage_stats = data["mage_stats"]
+class BestArtifact(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
-    # Tutaj logika wyboru najlepszych artefaktów w oparciu o rolę/mage stats
-    if mage_stats:
-        # Mage build
-        best_rolls = "Primary: Crit Rate %, Bonus: Annihilation"
-    else:
-        # Jeśli nie mage lub brak danych, możemy użyć AI do uzupełnienia builda
-        best_rolls = "Unknown – data fetched via AI"
+    @app_commands.command(
+        name="bestartifact",
+        description="Get best artifact rolls for an Immortal"
+    )
+    async def bestartifact(self, interaction: discord.Interaction, immortal: str):
+        hero = get_hero_info(immortal)
 
-    # Wyślij odpowiedź
-    await ctx.send(f"Best Artifact for **{hero['full']} ({hero['short']})**\nPrice Tier: {price}\nRecommended Rolls: {best_rolls}")
+        if not hero:
+            await interaction.response.send_message(
+                f"❓ Immortal **{immortal}** not found in database.\n"
+                f"I will use AI to estimate best artifacts (soon).",
+                ephemeral=True
+            )
+            return
+
+        artifacts = hero.get("artifacts", "No artifact data.")
+        await interaction.response.send_message(
+            f"🧩 **Best artifacts for {hero['name']}**\n{artifacts}"
+        )
+
+async def setup(bot):
+    await bot.add_cog(BestArtifact(bot))
