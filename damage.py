@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from mage_stats import MAGE_STATS
-from helpers import get_hero_info
 from ai_helper import fetch_hero_ai_data
 
 class Damage(commands.Cog):
@@ -11,6 +10,7 @@ class Damage(commands.Cog):
 
     @app_commands.command(name="damage", description="Compare ultimate damage between two heroes")
     @app_commands.describe(hero1="First hero", hero2="Second hero")
+    @app_commands.checks.cooldown(1, 10)  # 1 użycie na 10 sekund
     async def damage(self, interaction: discord.Interaction, hero1: str, hero2: str):
         h1 = hero1.lower()
         h2 = hero2.lower()
@@ -37,7 +37,8 @@ class Damage(commands.Cog):
                 response += f"🔥 {hero2.title()} has higher DPS!"
             else:
                 response += "⚖️ Both heroes have equal DPS!"
-        await interaction.response.send_message(response)
+
+        await interaction.response.send_message(response, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Damage(bot))

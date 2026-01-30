@@ -11,10 +11,11 @@ class HelpMeow(commands.Cog):
         response = (
             "**Available Commands:**\n"
             "/helpmeow - Show this help message\n"
-            "/bestartifact <hero> - Shows recommended artifact for a hero\n"
-            "/damage <hero1> <hero2> - Compares ultimate damage between two heroes"
+            "/bestartifact <role> <build> - Shows recommended artifact rolls\n"
+            "/damage <hero1> <hero2> - Compares ultimate damage between two heroes\n"
+            "/meowwiki <query> - Get a summarized guide about Infinity Kingdom"
         )
-        await interaction.response.send_message(response)
+        await interaction.response.send_message(response, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(HelpMeow(bot))

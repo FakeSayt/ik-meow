@@ -15,7 +15,7 @@ def home():
     return "Discord bot is running!"
 
 def run_web():
-    app.run(host="0.0.0.0", port=PORT)
+    app.run(host="0.0.0.0", port=PORT, use_reloader=False)
 
 Thread(target=run_web).start()
 
@@ -30,18 +30,19 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # LOAD EXTENSIONS / COMMANDS
 # =====================================================
 async def load_extensions():
-    # Load all command files
-    await bot.load_extension("bestartifact")
-    await bot.load_extension("damage")
-    await bot.load_extension("helpmeow")
+    for extension in ["bestartifact", "damage", "helpmeow", "meowwiki"]:
+        try:
+            await bot.load_extension(extension)
+        except Exception as e:
+            print(f"Error loading {extension}: {e}")
 
 # =====================================================
-# ON_READY EVENT
+# SETUP HOOK
 # =====================================================
 @bot.event
-async def on_ready():
+async def setup_hook():
     await load_extensions()
-    await bot.tree.sync()  # sync slash commands
+    await bot.tree.sync()
     print(f"{bot.user} is online and all commands are synced!")
 
 # =====================================================
