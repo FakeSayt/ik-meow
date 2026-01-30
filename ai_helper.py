@@ -1,41 +1,29 @@
-import asyncio
-import openai
-from config import OPENAI_API_KEY
+import discord
+from discord.ext import commands
+from discord import app_commands
+from ai_helper import fetch_hero_ai_data
 
-# Nowe API OpenAI >=1.0.0
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+class MeowWiki(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
-# Cache w pamięci
-AI_CACHE = {}
-
-async def fetch_hero_ai_data(hero_name: str) -> str:
-    query_lower = hero_name.lower()
-
-    # Sprawdzenie cache
-    if query_lower in AI_CACHE:
-        return AI_CACHE[query_lower]
-
-    if not OPENAI_API_KEY:
-        return "AI data unavailable (no API key)"
-
-    prompt = (
-        f"Provide a short summary and key meta information for the Infinity Kingdom hero, "
-        f"artifact, or event '{hero_name}'. Focus on what players should know."
+    @app_commands.command(
+        name="meowwiki",
+        description="Search Infinity Kingdom info and get a summarized guide"
     )
+    @app_commands.describe(query="Event, hero, artifact or keyword in Infinity Kingdom")
+    async def meowwiki(self, interaction: discord.Interaction, query: str):
+        # Wywołaj AI dla całej gry
+        ai_summary = await fetch_hero_ai_data(query)
 
-    try:
-        # Wywołanie synchroniczne w tle, aby użyć 'await'
-        response = await asyncio.to_thread(
-            lambda: client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=150
-            )
+        # Embed z tytułem i AI podsumowaniem
+        embed = discord.Embed(
+            title=f"Infinity Kingdom Info – {query.title()}",
+            description=ai_summary,
+            color=0x00ff00
         )
 
-        result = response.choices[0].message.content.strip()
-        AI_CACHE[query_lower] = result
-        return result
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    except Exception as e:
-        return f"Error fetching AI data: {e}"
+async def setup(bot):
+    await bot.add_cog(MeowWiki(bot))
