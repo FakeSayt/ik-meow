@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 from discord import app_commands
 from mage_stats import MAGE_STATS
