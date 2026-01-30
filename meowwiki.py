@@ -18,7 +18,6 @@ class MeowWiki(commands.Cog):
         # Spróbuj dopasować do lokalnych artefaktów
         artifact_info = await self.get_artifact_summary(query_lower)
 
-        # Tworzymy embed
         embed = discord.Embed(title=f"Infinity Kingdom Info – {query.title()}", color=0x00ff00)
 
         if artifact_info:
@@ -32,11 +31,11 @@ class MeowWiki(commands.Cog):
     async def get_artifact_summary(self, keyword: str) -> str:
         summaries = {
             "mage": "Mage builds focus on magical damage. Use Crit for high DPS chase builds, Nonchase for stable pure damage.",
-            "attack": "Attack builds focus on physical damage. Ultimate-based builds rely on energy regen (Surge), Physical builds focus on accuracy.",
-            "crit": "Mage – Crit (Chase) Build:\nPriority Rolls: Crit Rate → Magical Attack → Crit Damage → Magical → Defenses\nBest for VIP 13+",
-            "nonchase": "Mage – Non-Chase Build:\nPriority Rolls: Magical Attack → Magical Attack Value → Crit Rate → Crit Damage → Defenses\nFocus on pure damage.",
-            "ultimate": "Attack – Ultimate Ability Based DPS:\nTop Priority: Physical Attack → Iron Fist → Magical Defense → Accuracy → Physical Defense\nSurge mandatory.",
-            "physical": "Attack – Physical Damage Dealer:\nTop Priority: Physical Attack → Rapid (Alex/Hannibal) → Accuracy → Physical Defense → Crit\nAccuracy mandatory."
+            "attack": "Attack builds focus on physical damage. Ultimate builds rely on energy regen (Surge), Physical builds focus on accuracy.",
+            "crit": "Mage – Crit (Chase) Build: Crit Rate → Magical Attack → Crit Damage → Magical → Defenses",
+            "nonchase": "Mage – Non-Chase Build: Magical Attack → Magical Attack Value → Crit Rate → Crit Damage → Defenses",
+            "ultimate": "Attack – Ultimate DPS: Physical Attack → Surge → Iron Fist → Magical Defense → Accuracy → Physical Defense",
+            "physical": "Attack – Physical DPS: Physical Attack → Rapid (Alex/Hannibal) → Accuracy → Physical Defense → Crit"
         }
         return summaries.get(keyword)
 

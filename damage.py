@@ -10,7 +10,7 @@ class Damage(commands.Cog):
 
     @app_commands.command(name="damage", description="Compare ultimate damage between two heroes")
     @app_commands.describe(hero1="First hero", hero2="Second hero")
-    @app_commands.checks.cooldown(1, 10)  # 1 użycie na 10 sekund
+    @app_commands.checks.cooldown(1, 10)
     async def damage(self, interaction: discord.Interaction, hero1: str, hero2: str):
         h1 = hero1.lower()
         h2 = hero2.lower()
@@ -18,7 +18,6 @@ class Damage(commands.Cog):
         h1_data = MAGE_STATS.get(h1)
         h2_data = MAGE_STATS.get(h2)
 
-        # Fallback AI if hero missing
         if not h1_data:
             h1_data = {"dps": "Unknown", "special": await fetch_hero_ai_data(hero1)}
         if not h2_data:

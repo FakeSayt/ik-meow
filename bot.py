@@ -33,6 +33,7 @@ async def load_extensions():
     for extension in ["bestartifact", "damage", "helpmeow", "meowwiki"]:
         try:
             await bot.load_extension(extension)
+            print(f"Loaded {extension}")
         except Exception as e:
             print(f"Error loading {extension}: {e}")
 
